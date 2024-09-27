@@ -1,3 +1,4 @@
+
        // إعدادات Firebase
        const firebaseConfig = {
         apiKey: "AIzaSyCPpTAJDRfFuDkq2TGCVIU_LnmYRBXTnSc",
@@ -46,96 +47,131 @@
         productItem.innerHTML = `
             <h3>${product.name}</h3>
             <p>السعر: ${product.price}</p>
-            <p>الكمية المتاحة: ${product.quantity}</p>
+            <p>الكمية المتاحة: <span id="availableQuantity">${product.quantity}</span></p>
+            <label for="requestedQuantity">الكمية المطلوبة:</label>
+            <input type="number" id="requestedQuantity" min="1" max="${product.quantity}" oninput="updateAvailableQuantity(${productId}, this.value, ${product.quantity})">
             <button onclick="addToInvoice('${productId}', '${product.name}', ${product.price}, ${product.quantity})">اختيار</button>
         `;
         resultsDiv.appendChild(productItem);
     }
 
-    // دالة لإضافة المنتج إلى الفاتورة
-    function addToInvoice(id, name, price, availableQuantity) {
-        const quantity = prompt("ادخل الكمية المطلوبة:");
-
-        if (quantity && quantity > 0 && quantity <= availableQuantity) {
-            const item = { id, name, price, quantity: parseInt(quantity) };
-            invoiceItems.push(item);
-            updateInvoice();
+    // دالة لتحديث الكمية المتاحة لحظيًا
+    function updateAvailableQuantity(productId, requestedQuantity, availableQuantity) {
+        const availableQuantitySpan = document.getElementById('availableQuantity');
+        if (requestedQuantity > 0 && requestedQuantity <= availableQuantity) {
+            availableQuantitySpan.innerText = availableQuantity - requestedQuantity;
         } else {
-            alert("كمية غير صحيحة.");
+            availableQuantitySpan.innerText = availableQuantity;
         }
     }
 
-    // دالة لتحديث الفاتورة
-    function updateInvoice() {
-        const invoiceDiv = document.getElementById('invoice');
-        invoiceDiv.innerHTML = "";
+// دالة لإضافة المنتج إلى الفاتورة
+function addToInvoice(id, name, price, availableQuantity) {
+    const quantityInput = document.getElementById('requestedQuantity');
+    const quantity = parseInt(quantityInput.value);
 
-        let totalPrice = 0;
-        let totalCount = 0;
-
-        invoiceItems.forEach((item, index) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.innerHTML = `
-                <p>${index + 1}. ${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity} 
-                <button onclick="removeFromInvoice(${index})">حذف</button></p>
-            `;
-            invoiceDiv.appendChild(itemDiv);
-            totalPrice += item.price * item.quantity;
-            totalCount += item.quantity;
-        });
-
-        document.getElementById('totalCount').innerText = `إجمالي عدد الأصناف: ${totalCount}`;
-        document.getElementById('totalPrice').innerText = `إجمالي السعر: ${totalPrice}`;
-    }
-
-    // دالة لحذف صنف من الفاتورة
-    function removeFromInvoice(index) {
-        const removedItem = invoiceItems[index];
-        invoiceItems.splice(index, 1); // حذف العنصر من الفاتورة
+    if (quantity && quantity > 0 && quantity <= availableQuantity) {
+        const item = { id, name, price, quantity: parseInt(quantity) };
+        invoiceItems.push(item);
         updateInvoice();
 
-        // تحديث الكمية في المخزن
-        const productRef = productsRef.child(removedItem.id);
+        // تحديث الكمية في المخزن مباشرة
+        const productRef = productsRef.child(id);
         productRef.once('value', (snapshot) => {
             const currentQuantity = snapshot.val().quantity;
-            productRef.update({ quantity: currentQuantity + removedItem.quantity });
+            productRef.update({ quantity: currentQuantity - quantity });
         });
+
+        // مسح الـ ID من حقل البحث
+        document.getElementById('searchId').value = ""; 
+        document.getElementById('searchResults').innerHTML = ""; // مسح النتائج
+    } else {
+        alert("كمية غير صحيحة.");
+    }
+}
+
+
+   // تحديث دالة تحديث الفاتورة لإضافة زر الطباعة
+function updateInvoice() {
+    const invoiceDiv = document.getElementById('invoice');
+    invoiceDiv.innerHTML = "";
+
+    let totalPrice = 0;
+    let totalCount = 0;
+
+    invoiceItems.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = `
+            <p>${index + 1}. ${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity} 
+            <button onclick="removeFromInvoice(${index})">حذف</button></p>
+        `;
+        invoiceDiv.appendChild(itemDiv);
+        totalPrice += item.price * item.quantity;
+        totalCount += item.quantity;
+    });
+
+    document.getElementById('totalCount').innerText = `إجمالي عدد الأصناف: ${totalCount}`;
+    document.getElementById('totalPrice').innerText = `إجمالي السعر: ${totalPrice}`;
+
+    // إضافة زر الطباعة
+    const printButton = document.createElement('button');
+    printButton.innerText = "طباعة الفاتورة";
+    printButton.onclick = printInvoice; // ربط الزر بدالة الطباعة
+    invoiceDiv.appendChild(printButton);
+}
+
+
+// دالة لإتمام عملية البيع
+function completeSale() {
+    if (invoiceItems.length === 0) {
+        alert("لا يوجد منتجات في الفاتورة.");
+        return;
     }
 
-    // دالة لإتمام عملية البيع
-    function completeSale() {
-        if (invoiceItems.length === 0) {
-            alert("لا يوجد منتجات في الفاتورة.");
-            return;
-        }
+    const saleId = 10 + Math.floor(Math.random() * 1000); // توليد ID عشوائي يبدأ من 10
+    const saleData = {
+        saleId,
+        items: invoiceItems,
+        timestamp: new Date().toISOString() // الوقت والتاريخ
+    };
 
-        const saleId = 10 + Math.floor(Math.random() * 1000); // توليد ID عشوائي يبدأ من 10
-        const saleData = {
-            saleId,
-            items: invoiceItems,
-            timestamp: new Date().toISOString() // الوقت والتاريخ
-        };
-
-        salesRef.child(saleId).set(saleData, (error) => {
-            if (error) {
-                alert("حدث خطأ أثناء إتمام عملية البيع.");
-            } else {
-                // تحديث الكمية في المخزن بعد إتمام البيع
-                invoiceItems.forEach(item => {
-                    const productRef = productsRef.child(item.id);
-                    productRef.once('value', (snapshot) => {
-                        const currentQuantity = snapshot.val().quantity;
-                        productRef.update({ quantity: currentQuantity - item.quantity });
-                    });
+    salesRef.child(saleId).set(saleData, (error) => {
+        if (error) {
+            alert("حدث خطأ أثناء إتمام عملية البيع.");
+        } else {
+            // تحديث الكمية في المخزن بعد إتمام البيع
+            invoiceItems.forEach(item => {
+                const productRef = productsRef.child(item.id);
+                productRef.once('value', (snapshot) => {
+                    const currentQuantity = snapshot.val().quantity;
+                    productRef.update({ quantity: currentQuantity - item.quantity });
                 });
+            });
 
-                alert("تم إتمام عملية البيع بنجاح.");
-                invoiceItems = []; // إعادة ضبط الفاتورة
-                updateInvoice();
-                loadSales(); // تحميل العمليات السابقة بعد البيع
-            }
-        });
-    }
+            alert("تم إتمام عملية البيع بنجاح.");
+            printInvoice(); // استدعاء دالة الطباعة بعد إتمام العملية
+            invoiceItems = []; // إعادة ضبط الفاتورة
+            updateInvoice();
+            loadSales(); // تحميل العمليات السابقة بعد البيع
+        }
+    });
+}
+
+// دالة لطباعة الفاتورة
+function printInvoice() {
+    let printContent = document.getElementById('invoice').innerHTML;
+    let printWindow = window.open('', '', 'height=600,width=800');
+    printWindow.document.write('<html><head><title>فاتورة</title>');
+    printWindow.document.write('</head><body >');
+    printWindow.document.write('<h1>فاتورة البيع</h1>');
+    printWindow.document.write(printContent);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+
+
 
     // دالة لتحميل عمليات البيع السابقة
     function loadSales() {
@@ -148,96 +184,108 @@
         salesRef.once('value', (snapshot) => {
             snapshot.forEach(childSnapshot => {
                 const sale = childSnapshot.val();
-                const saleId = childSnapshot.key;
+                const saleId = sale.saleId;
 
-                const saleDiv = document.createElement('div');
-                saleDiv.innerHTML = `
-                    <h4>عملية بيع ${saleId}</h4>
-                    <p>الوقت: ${new Date(sale.timestamp).toLocaleString()}</p>
-                    <button onclick="printSale('${saleId}')">طباعة العملية</button>
-                    <button onclick="deleteSale('${saleId}')">حذف العملية</button>
-                `;
-                salesListDiv.appendChild(saleDiv);
-            });
-
-            loader.style.display = "none"; // إخفاء اللودر بعد الانتهاء من التحميل
-        });
-    }
-
-    // دالة لطباعة العملية
-    function printSale(saleId) {
-        salesRef.child(saleId).once('value', (snapshot) => {
-            const sale = snapshot.val();
-            let printWindow = window.open('', '_blank');
-            printWindow.document.write('<h2>فاتورة عملية البيع</h2>');
-            printWindow.document.write(`<h4>رقم العملية: ${saleId}</h4>`);
-            printWindow.document.write(`<p>الوقت: ${new Date(sale.timestamp).toLocaleString()}</p>`);
-            printWindow.document.write('<h3>المنتجات:</h3>');
-            sale.items.forEach(item => {
-                printWindow.document.write(`<p>${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity}</p>`);
-            });
-            printWindow.document.close();
-            printWindow.print();
-        });
-    }
-
-
-    // دالة لحذف عملية البيع
-    function deleteSale(saleId) {
-        salesRef.child(saleId).once('value', (snapshot) => {
-            if (snapshot.exists()) {
-                const sale = snapshot.val();
-
-                // تحديث الكميات في المخزن
+                const saleItem = document.createElement('div');
+                saleItem.innerHTML = `<h4>عملية بيع رقم: ${saleId}</h4>
+                                      <p>تاريخ العملية: ${sale.timestamp}</p>`;
                 sale.items.forEach(item => {
-                    const productRef = productsRef.child(item.id);
-                    productRef.once('value', (prodSnapshot) => {
-                        const currentQuantity = prodSnapshot.val().quantity;
-                        productRef.update({ quantity: currentQuantity + item.quantity });
-                    });
+                    saleItem.innerHTML += `<p>اسم المنتج: ${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity}</p>`;
                 });
-
-                // حذف العملية بعد تحديث الكميات
-                salesRef.child(saleId).remove().then(() => {
-                    alert("تم حذف العملية بنجاح.");
-                    loadSales(); // إعادة تحميل العمليات بعد الحذف
-                }).catch(error => {
-                    alert("حدث خطأ أثناء حذف العملية.");
-                });
-            }
+                salesListDiv.appendChild(saleItem);
+            });
+            loader.style.display = "none"; // إخفاء اللودر بعد التحميل
         });
     }
 
-
-
-    // دالة للبحث عن عملية بيع بالـ ID
+    // دالة للبحث عن عملية بيع برقم العملية
     function searchSaleById() {
         const searchSaleId = document.getElementById('searchSaleId').value.trim();
         const salesListDiv = document.getElementById('salesList');
-
         salesListDiv.innerHTML = ""; // مسح القائمة السابقة
 
         if (searchSaleId === "") {
-            loadSales(); // تحميل جميع العمليات إذا كان الحقل فارغاً
+            loadSales(); // تحميل جميع العمليات إذا لم يتم إدخال ID
             return;
         }
 
         salesRef.child(searchSaleId).once('value', (snapshot) => {
             if (snapshot.exists()) {
                 const sale = snapshot.val();
-                const saleDiv = document.createElement('div');
-                saleDiv.innerHTML = `
-                    <h4>عملية بيع ${searchSaleId}</h4>
-                    <p>الوقت: ${new Date(sale.timestamp).toLocaleString()}</p>
-                    <button onclick="printSale('${searchSaleId}')">طباعة العملية</button>
-                    <button onclick="deleteSale('${searchSaleId}')">حذف العملية</button>
-                `;
-                salesListDiv.appendChild(saleDiv);
+                const saleItem = document.createElement('div');
+                saleItem.innerHTML = `<h4>عملية بيع رقم: ${sale.saleId}</h4>
+                                      <p>تاريخ العملية: ${sale.timestamp}</p>`;
+                sale.items.forEach(item => {
+                    saleItem.innerHTML += `<p>اسم المنتج: ${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity}</p>`;
+                });
+                salesListDiv.appendChild(saleItem);
             } else {
                 salesListDiv.innerHTML = "<p>لا توجد عملية بهذا الرقم.</p>";
             }
         });
     }
 
-    // تحميل العمليات عند فتح الصفحة
-    loadSales();
+
+// دالة لطباعة الفاتورة
+function printInvoice() {
+    if (invoiceItems.length === 0) {
+        alert("لا يوجد منتجات في الفاتورة.");
+        return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>فاتورة البيع</title></head><body>');
+    printWindow.document.write('<h1>فاتورة البيع</h1>');
+    printWindow.document.write(`<h4>تاريخ العملية: ${new Date().toLocaleString()}</h4>`);
+    printWindow.document.write('<table border="1"><tr><th>الاسم</th><th>السعر</th><th>الكمية</th></tr>');
+
+    let totalPrice = 0;
+
+    invoiceItems.forEach(item => {
+        printWindow.document.write(`<tr><td>${item.name}</td><td>${item.price}</td><td>${item.quantity}</td></tr>`);
+        totalPrice += item.price * item.quantity;
+    });
+
+    printWindow.document.write('</table>');
+    printWindow.document.write(`<h4>الإجمالي: ${totalPrice}</h4>`);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// تحديث دالة تحديث الفاتورة لإضافة زر الطباعة
+function updateInvoice() {
+    const invoiceDiv = document.getElementById('invoice');
+    invoiceDiv.innerHTML = "";
+
+    let totalPrice = 0;
+    let totalCount = 0;
+
+    invoiceItems.forEach((item, index) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = `
+            <p>${index + 1}. ${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity} 
+            <button onclick="removeFromInvoice(${index})">حذف</button></p>
+        `;
+        invoiceDiv.appendChild(itemDiv);
+        totalPrice += item.price * item.quantity;
+        totalCount += item.quantity;
+    });
+
+    document.getElementById('totalCount').innerText = `إجمالي عدد الأصناف: ${totalCount}`;
+    document.getElementById('totalPrice').innerText = `إجمالي السعر: ${totalPrice}`;
+
+    // إضافة زر الطباعة
+    const printButton = document.createElement('button');
+    printButton.innerText = "طباعة الفاتورة";
+    printButton.onclick = printInvoice; // ربط الزر بدالة الطباعة
+    invoiceDiv.appendChild(printButton);
+}
+
+
+
+
+    // تحميل العمليات عند تحميل الصفحة
+    window.onload = function() {
+        loadSales();
+    };
