@@ -153,6 +153,7 @@ function completeSale() {
             loadSales(); // تحميل العمليات السابقة بعد البيع
         }
     });
+    location.reload();
 }
 
 // دالة لطباعة الفاتورة
