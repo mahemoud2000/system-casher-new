@@ -151,9 +151,10 @@ function completeSale() {
             invoiceItems = []; // إعادة ضبط الفاتورة
             updateInvoice();
             loadSales(); // تحميل العمليات السابقة بعد البيع
+            location.reload(); // بعد اتمام العمليه بنجاح يتم تحديث الصفحه كاملا
         }
     });
-    location.reload();
+    
 }
 
 // دالة لطباعة الفاتورة
