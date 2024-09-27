@@ -39,27 +39,80 @@
         th {
             background-color: #f2f2f2;
         }
+        /* Loader CSS */
+        #loader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            text-align: center;
+        }
+        #loader img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+        }
+        /* تنسيق التقرير */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    border: 1px solid #ccc;
+}
+
+.report-table th, .report-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+.total-sales, .total-items {
+    font-weight: bold;
+    text-align: right;
+}
+
+/* تنسيق اللودر */
+#loader {
+    display: none; /* إخفاء اللودر افتراضيًا */
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000; /* يجب أن يكون فوق جميع العناصر الأخرى */
+}
+
     </style>
 </head>
 <body>
-<div class="reports">
-    <h1>تقارير المنتجات والمبيعات</h1>
-
-    <h2>تقرير المنتجات</h2>
-    <button onclick="generateProductReport()">إنشاء تقرير المنتجات</button>
-
-    <h2>تقرير المبيعات</h2>
-    <button onclick="generateSalesReport()">إنشاء تقرير المبيعات</button>
-
-    <div id="reportContainer">
-        <h2>التقرير</h2>
-        <div id="reportContent"></div>
-        <button onclick="downloadPDF()">تحميل PDF</button>
-        <button onclick="printReport()">طباعة التقرير</button>
+    <div id="loader">
+        <img src="https://example.com/loader.gif" alt="Loading..." />
+        <p>يرجى الانتظار...</p>
     </div>
-</div>
+    <div class="reports">
+        <h1>تقارير المنتجات والمبيعات</h1>
+        
+        <h2>تقرير المنتجات</h2>
+        <button onclick="generateProductReport()">إنشاء تقرير المنتجات</button>
+        
+        <h2>تقرير المبيعات</h2>
+        <button onclick="generateSalesReport()">إنشاء تقرير المبيعات</button>
+        
+        <div id="reportContainer">
+            <h2>التقرير</h2>
+            <div id="reportContent"></div>
+            <button onclick="downloadPDF()">تحميل PDF</button>
+            <button onclick="printReport()">طباعة التقرير</button>
+        </div>
+    </div>
 
 <script src="../js/reports-js.js">
+
 </script>
 </body>
 </html>
