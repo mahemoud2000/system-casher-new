@@ -245,3 +245,32 @@ function deleteSale(saleId, items) {
         }
     });
 }
+
+
+// دالة البحث عن عملية بيع بالـ ID
+function searchSaleById() {
+    const searchSaleId = document.getElementById('searchSaleId').value.trim();
+    const salesListDiv = document.getElementById('salesList');
+    salesListDiv.innerHTML = ""; // مسح القائمة السابقة
+
+    if (searchSaleId === "") {
+        loadSales(); // إعادة تحميل كل العمليات إذا لم يكن هناك ID
+        return;
+    }
+
+    salesRef.child(searchSaleId).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            const sale = snapshot.val();
+            const saleItem = document.createElement('div');
+            saleItem.innerHTML = `<h4>عملية بيع رقم: ${sale.saleId}</h4>
+                                  <p>تاريخ العملية: ${sale.timestamp}</p>`;
+            sale.items.forEach(item => {
+                saleItem.innerHTML += `<p>اسم المنتج: ${item.name} - سعر الوحدة: ${item.price} - الكمية: ${item.quantity}</p>`;
+            });
+
+            salesListDiv.appendChild(saleItem);
+        } else {
+            salesListDiv.innerHTML = "<p>لا توجد عملية بيع بهذا الـ ID.</p>";
+        }
+    });
+}
