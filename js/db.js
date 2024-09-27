@@ -34,6 +34,7 @@ function showProducts() {
 
 // عرض المنتجات
 function displayProducts(snapshot) {
+    document.getElementById('searchInput').style.display = 'block';
     const dataDisplay = document.getElementById('dataDisplay');
     dataDisplay.innerHTML = ''; // مسح المحتوى السابق
     snapshot.forEach(childSnapshot => {
@@ -54,6 +55,7 @@ function displayProducts(snapshot) {
 
 // عرض المبيعات
 function showSales() {
+    document.getElementById('searchInput').style.display = 'none';
     showLoader();
     salesRef.on('value', (snapshot) => {
         hideLoader();
