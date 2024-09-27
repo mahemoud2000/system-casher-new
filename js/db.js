@@ -1,4 +1,5 @@
-const firebaseConfig = {
+  // تهيئة Firebase
+  const firebaseConfig = {
     apiKey: "AIzaSyCPpTAJDRfFuDkq2TGCVIU_LnmYRBXTnSc",
     authDomain: "new-protfolio.firebaseapp.com",
     databaseURL: "https://new-protfolio-default-rtdb.firebaseio.com",
@@ -106,23 +107,23 @@ function deleteProduct(productId) {
     }
 }
 
+// حذف عملية البيع وإعادة الكمية إلى المخزن
 function deleteSale(saleId) {
     if (confirm('هل أنت متأكد أنك تريد حذف هذه العملية؟')) {
         salesRef.child(saleId).once('value', (snapshot) => {
             const sale = snapshot.val();
             if (sale && sale.items && sale.items['0']) {
                 const item = sale.items['0'];
-                const productId = item.id; // افترض أن لديك معرف المنتج في العناصر
+                const productId = item.id; 
                 const soldQuantity = item.quantity;
 
                 // تحديث الكمية في المخزن
                 productsRef.child(productId).once('value', (productSnapshot) => {
                     const product = productSnapshot.val();
                     if (product) {
-                        const updatedQuantity = product.quantity + soldQuantity; // زيادة الكمية
+                        const updatedQuantity = product.quantity + soldQuantity;
                         productsRef.child(productId).update({ quantity: updatedQuantity })
                             .then(() => {
-                                // حذف عملية البيع بعد تحديث المخزن
                                 salesRef.child(saleId).remove().then(() => {
                                     alert('تم حذف عملية البيع بنجاح. وتم استرجاع الكمية إلى المخزن.');
                                 });
@@ -137,6 +138,7 @@ function deleteSale(saleId) {
         });
     }
 }
+
 function deleteReport(reportId) {
     if (confirm('هل أنت متأكد أنك تريد حذف هذا التقرير؟')) {
         reportsRef.child(reportId).remove().then(() => {
@@ -145,6 +147,7 @@ function deleteReport(reportId) {
     }
 }
 
+// حذف جميع البيانات
 function deleteAllData() {
     const password = prompt('أدخل كلمة المرور لمسح جميع البيانات:');
     if (password === '000') {
@@ -167,8 +170,7 @@ function deleteAllData() {
     }
 }
 
-// البحث عن المنتجات وعرض جميع النتائج المطابقة
-// البحث عن المنتجات وعرض جميع النتائج المطابقة
+// البحث عن المنتجات وعرض النتائج
 function searchProduct() {
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
     productsRef.once('value', (snapshot) => {
@@ -180,7 +182,6 @@ function searchProduct() {
             const product = childSnapshot.val();
             const productId = childSnapshot.key.padStart(3, '0');
 
-            // التحقق من تطابق البحث بالاسم أو ID
             if (productId.includes(query) || product.name.toLowerCase().includes(query)) {
                 found = true;
                 dataDisplay.innerHTML += `
@@ -201,18 +202,8 @@ function searchProduct() {
     });
 }
 
-// إضافة حدث للبحث عند تغيير قيمة حقل الإدخال
 document.getElementById('searchInput').addEventListener('input', searchProduct);
 
-        // اختبر الماسح
-        function testScannerInput() {
-            // إدخال قيمة افتراضية كاختبار
-            document.getElementById('searchInput').value = '001'; // أو أي قيمة ترغب في اختبارها
-            searchProduct(); // استدعاء دالة البحث لعرض النتائج
-        }
-
-
-        
 // طباعة تفاصيل عملية البيع
 function printSale(saleId) {
     salesRef.child(saleId).once('value', (snapshot) => {
@@ -236,31 +227,24 @@ function printSale(saleId) {
         // المرور على جميع العناصر
         for (let key in sale.items) {
             const item = sale.items[key];
-            const itemTotal = item.price * item.quantity; // حساب الإجمالي لكل عنصر
+            const itemTotal = item.price * item.quantity;
             totalAmount += itemTotal;
 
-            printWindow.document.write(`
-                <tr>
-                    <td>${item.name || 'غير معروف'}</td>
-                    <td>${item.price ? item.price.toFixed(2) : 'غير متوفر'}</td>
-                    <td>${item.quantity || 0}</td>
-                    <td>${itemTotal.toFixed(2)}</td>
-                </tr>
-            `);
+            printWindow.document.write(`<tr>
+                <td>${item.name}</td>
+                <td>${item.price}</td>
+                <td>${item.quantity}</td>
+                <td>${itemTotal}</td>
+            </tr>`);
         }
 
-        printWindow.document.write('</tbody>');
-        printWindow.document.write(`
-            <tfoot>
-                <tr>
-                    <td colspan="3"><strong>الإجمالي:</strong></td>
-                    <td>${totalAmount.toFixed(2)}</td>
-                </tr>
-            </tfoot>
-        `);
-        printWindow.document.write('</table>');
+        printWindow.document.write('</tbody></table>');
+        printWindow.document.write(`<h3>إجمالي المبلغ: ${totalAmount}</h3>`);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         printWindow.print();
     });
 }
+
+// عرض البيانات عند التحميل
+showProducts();
