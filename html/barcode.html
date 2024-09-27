@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء باركود</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <style>
+        .barcode { display: inline-block; margin: 5px; }
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                text-align: center;
+            }
+            canvas {
+                page-break-inside: avoid;
+            }
+        }
+        #barcodesContainer > canvas {
+            width: 150px;
+            height: 75px;
+            font-size: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>إنشاء باركود</h1>
+    <label for="startId">ID البداية:</label>
+    <input type="number" id="startId" value="1" min="1"><br>
+    <label for="endId">ID النهاية:</label>
+    <input type="number" id="endId" value="10" min="1"><br>
+    <button onclick="generateBarcodes()">إنشاء باركود</button>
+    <button onclick="downloadAsImage()">تحميل كصورة</button>
+    <button onclick="downloadAsPDF()">تحميل كملف PDF</button>
+    <button onclick="printBarcodes()">طباعة باركود</button>
+
+    <div id="barcodesContainer"></div>
+
+    <script src="../js/barcode.js">
+    </script>
+</body>
+</html>
